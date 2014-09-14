@@ -319,8 +319,8 @@ io.sockets.on("connection", function (socket) {
 	});
 
 	//Room functions
-	socket.on("createRoom", function(name) {	
-		if ((people[socket.id].type == "people") === true) {
+	socket.on("createRoom", function(name) {
+		if ((typeof people[socket.id] !== "undefined") && (people[socket.id].type == "people")) {
 			if (people[socket.id].inroom) {
 				socket.emit("update", "You are in a room. Please leave it first to create your own.");
 			} else if (!people[socket.id].owns) {
@@ -341,7 +341,7 @@ io.sockets.on("connection", function (socket) {
 			} else {
 				socket.emit("update", "You have already created a room.");
 			}
-		} else if (doctors[socket.id].type == "doctors") {	
+		} else if ((typeof doctors[socket.id] !== "undefined") && (doctors[socket.id].type == "doctors")) {	
 			if (doctors[socket.id].inroom) {
 				socket.emit("update", "You are in a room. Please leave it first to create your own.");
 			} else if (!doctors[socket.id].owns) {
