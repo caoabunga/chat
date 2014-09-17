@@ -65,109 +65,257 @@ function purge(s, action) {
 		3) leaves the room
 			- n/a
 	*/
-	if (people[s.id].inroom) { //user is in a room
-		var room = rooms[people[s.id].inroom]; //check which room user is in.
-		if (s.id === room.owner) { //user in room and owns room
-			if (action === "disconnect") {
-				io.sockets.in(s.room).emit("update", "The owner (" +people[s.id].name + ") has left the server. The room is removed and you have been disconnected from it as well.");
-				var socketids = [];
-				for (var i=0; i<sockets.length; i++) {
-					socketids.push(sockets[i].id);
-					if(_.contains((socketids)), room.people) {
-						sockets[i].leave(room.name);
-					}
-				}
+	
+	if ((typeof people[s.id] !== "undefined") && (people[s.id].type == "people")){ //user is in a room
+		if (people[s.id].inroom) {
+			var room = rooms[people[s.id].inroom]; //check which room user is in.
 
-				if(_.contains((room.people)), s.id) {
-					for (var i=0; i<room.people.length; i++) {
-						people[room.people[i]].inroom = null;
+			if (s.id === room.owner) { //user in room and owns room
+				if (action === "disconnect") {
+					io.sockets.in(s.room).emit("update", "The owner (" +people[s.id].name + ") has left the server. The room is removed and you have been disconnected from it as well.");
+					var socketids = [];
+					for (var i=0; i<sockets.length; i++) {
+						socketids.push(sockets[i].id);
+						if(_.contains((socketids)), room.people) {
+							sockets[i].leave(room.name);
+						}
 					}
-				}
-				room.people = _.without(room.people, s.id); //remove people from the room:people{}collection
-				delete rooms[people[s.id].owns]; //delete the room
-				delete people[s.id]; //delete user from people collection
-				delete chatHistory[room.name]; //delete the chat history
-				sizePeople = _.size(people);
-				sizeRooms = _.size(rooms);
-				io.sockets.emit("update-people", {people: people, count: sizePeople});
-				io.sockets.emit("roomList", {rooms: rooms, count: sizeRooms});
-				var o = _.findWhere(sockets, {'id': s.id});
-				sockets = _.without(sockets, o);
-			} else if (action === "removeRoom") { //room owner removes room
-				io.sockets.in(s.room).emit("update", "The owner (" +people[s.id].name + ") has removed the room. The room is removed and you have been disconnected from it as well.");
-				var socketids = [];
-				for (var i=0; i<sockets.length; i++) {
-					socketids.push(sockets[i].id);
-					if(_.contains((socketids)), room.people) {
-						sockets[i].leave(room.name);
-					}
-				}
 
-				if(_.contains((room.people)), s.id) {
-					for (var i=0; i<room.people.length; i++) {
-						people[room.people[i]].inroom = null;
+					if(_.contains((room.people)), s.id) {
+						for (var i=0; i<room.people.length; i++) {
+							people[room.people[i]].inroom = null;
+						}
+						for (var i=0; i<room.doctors.length; i++) {
+							doctors[room.doctors[i]].inroom = null;
+						}
 					}
-				}
-				delete rooms[people[s.id].owns];
-				people[s.id].owns = null;
-				room.people = _.without(room.people, s.id); //remove people from the room:people{}collection
-				delete chatHistory[room.name]; //delete the chat history
-				sizeRooms = _.size(rooms);
-				io.sockets.emit("roomList", {rooms: rooms, count: sizeRooms});
-			} else if (action === "leaveRoom") { //room owner leaves room
-				io.sockets.in(s.room).emit("update", "The owner (" +people[s.id].name + ") has left the room. The room is removed and you have been disconnected from it as well.");
-				var socketids = [];
-				for (var i=0; i<sockets.length; i++) {
-					socketids.push(sockets[i].id);
-					if(_.contains((socketids)), room.people) {
-						sockets[i].leave(room.name);
+					room.people = _.without(room.people, s.id); //remove people from the room:people{}collection
+					room.doctors = _.without(room.doctors, s.id); 
+					delete rooms[people[s.id].owns]; //delete the room
+					delete people[s.id]; //delete user from people collection
+					delete chatHistory[room.name]; //delete the chat history
+					sizePeople = _.size(people);
+					sizeDoctors = _.size(doctors);
+					sizeRooms = _.size(rooms);
+					io.sockets.emit("update-doctors", {doctors: doctors, count: sizeDoctors});
+					io.sockets.emit("update-people", {people: people, count: sizePeople});
+					io.sockets.emit("roomList", {rooms: rooms, count: sizeRooms});
+					var o = _.findWhere(sockets, {'id': s.id});
+					sockets = _.without(sockets, o);
+				} else if (action === "removeRoom") { //room owner removes room
+					io.sockets.in(s.room).emit("update", "The owner (" +people[s.id].name + ") has removed the room. The room is removed and you have been disconnected from it as well.");
+					var socketids = [];
+					for (var i=0; i<sockets.length; i++) {
+						socketids.push(sockets[i].id);
+						if(_.contains((socketids)), room.people) {
+							sockets[i].leave(room.name);
+						}
 					}
-				}
 
-				if(_.contains((room.people)), s.id) {
-					for (var i=0; i<room.people.length; i++) {
-						people[room.people[i]].inroom = null;
+					if(_.contains((room.people)), s.id) {
+						for (var i=0; i<room.people.length; i++) {
+							people[room.people[i]].inroom = null;
+						}
+						for (var i=0; i<room.doctors.length; i++) {
+							doctors[room.doctors[i]].inroom = null;
+						}
+					}
+					delete rooms[people[s.id].owns];
+					people[s.id].owns = null;
+					room.people = _.without(room.people, s.id); //remove people from the room:people{}collection
+					room.doctors = _.without(room.doctors, s.id);
+					delete chatHistory[room.name]; //delete the chat history
+					sizeRooms = _.size(rooms);
+					io.sockets.emit("roomList", {rooms: rooms, count: sizeRooms});
+				} else if (action === "leaveRoom") { //room owner leaves room
+					io.sockets.in(s.room).emit("update", "The owner (" +people[s.id].name + ") has left the room. The room is removed and you have been disconnected from it as well.");
+					var socketids = [];
+					for (var i=0; i<sockets.length; i++) {
+						socketids.push(sockets[i].id);
+						if(_.contains((socketids)), room.people) {
+							sockets[i].leave(room.name);
+						}
+					}
+
+					if(_.contains((room.people)), s.id) {
+						for (var i=0; i<room.people.length; i++) {
+							people[room.people[i]].inroom = null;
+						}
+						for (var i=0; i<room.doctors.length; i++) {
+							doctors[room.doctors[i]].inroom = null;
+						}
+					}
+					delete rooms[people[s.id].owns];
+					people[s.id].owns = null;
+					room.people = _.without(room.people, s.id); //remove people from the room:people{}collection
+					room.doctors = _.without(room.doctors, s.id);
+					delete chatHistory[room.name]; //delete the chat history
+					sizeRooms = _.size(rooms);
+					io.sockets.emit("roomList", {rooms: rooms, count: sizeRooms});
+				}
+			} else {//user in room but does not own room
+				if (action === "disconnect") {
+					io.sockets.emit("update", people[s.id].name + " has disconnected from the server.");
+					if (_.contains((room.people), s.id)) {
+						var personIndex = room.people.indexOf(s.id);
+						room.people.splice(personIndex, 1);
+						s.leave(room.name);
+					}
+					delete people[s.id];
+					sizeDoctors = _.size(doctors);				
+					sizePeople = _.size(people);
+					io.sockets.emit("update-people", {people: people, count: sizePeople });
+					io.sockets.emit("update-doctors", {doctors: doctors, count: sizeDoctors });
+					var o = _.findWhere(sockets, {'id': s.id});
+					sockets = _.without(sockets, o);
+	//  Start here
+
+				} else if (action === "removeRoom") {
+					s.emit("update", "Only the owner can remove a room.");
+				} else if (action === "leaveRoom") {
+					if (_.contains((room.people), s.id)) {
+						var personIndex = room.people.indexOf(s.id);
+						room.people.splice(personIndex, 1);
+						people[s.id].inroom = null;
+						io.sockets.emit("update", people[s.id].name + " has left the room.");
+						s.leave(room.name);
 					}
 				}
-				delete rooms[people[s.id].owns];
-				people[s.id].owns = null;
-				room.people = _.without(room.people, s.id); //remove people from the room:people{}collection
-				delete chatHistory[room.name]; //delete the chat history
-				sizeRooms = _.size(rooms);
-				io.sockets.emit("roomList", {rooms: rooms, count: sizeRooms});
-			}
-		} else {//user in room but does not own room
-			if (action === "disconnect") {
+			}	
+		}
+	} else if ((typeof doctors[s.id] !== "undefined") && (doctors[s.id].type == "doctors")) { 
+		if  (doctors[s.id].inroom) {
+			
+			var room = rooms[doctors[s.id].inroom]; //check which room user is in.
+
+				if (s.id === room.owner) { //user in room and owns room
+					if (action === "disconnect") {
+						io.sockets.in(s.room).emit("update", "The owner (" + doctors[s.id].name + ") has left the server. The room is removed and you have been disconnected from it as well.");
+						var socketids = [];
+						for (var i=0; i<sockets.length; i++) {
+							socketids.push(sockets[i].id);
+							if(_.contains((socketids)), room.doctors) {
+								sockets[i].leave(room.name);
+							}
+						}
+
+						if(_.contains((room.doctors)), s.id) {
+							for (var i=0; i<room.people.length; i++) {
+								people[room.people[i]].inroom = null;
+							}
+							for (var i=0; i<room.doctors.length; i++) {
+								doctors[room.doctors[i]].inroom = null;
+							}
+						}
+						room.people = _.without(room.people, s.id); //remove people from the room:people{}collection
+						room.doctors = _.without(room.doctors, s.id); 
+						delete rooms[doctors[s.id].owns]; //delete the room
+						delete doctors[s.id]; //delete user from people collection
+						delete chatHistory[room.name]; //delete the chat history
+						sizePeople = _.size(people);
+						sizeDoctors = _.size(doctors);
+						sizeRooms = _.size(rooms);
+						io.sockets.emit("update-doctors", {doctors: doctors, count: sizeDoctors});
+						io.sockets.emit("update-people", {people: people, count: sizePeople});
+						io.sockets.emit("roomList", {rooms: rooms, count: sizeRooms});
+						var o = _.findWhere(sockets, {'id': s.id});
+						sockets = _.without(sockets, o);
+					} else if (action === "removeRoom") { //room owner removes room
+						io.sockets.in(s.room).emit("update", "The owner (" + doctors[s.id].name + ") has removed the room. The room is removed and you have been disconnected from it as well.");
+						var socketids = [];
+						for (var i=0; i<sockets.length; i++) {
+							socketids.push(sockets[i].id);
+							if(_.contains((socketids)), room.doctors) {
+								sockets[i].leave(room.name);
+							}
+						}
+
+						if(_.contains((room.doctors)), s.id) {
+							for (var i=0; i<room.people.length; i++) {
+								people[room.people[i]].inroom = null;
+							}
+							for (var i=0; i<room.doctors.length; i++) {
+								doctors[room.doctors[i]].inroom = null;
+							}
+						}
+						delete rooms[doctors[s.id].owns];
+						doctors[s.id].owns = null;
+						room.people = _.without(room.people, s.id); //remove people from the room:people{}collection
+						room.doctors = _.without(room.doctors, s.id);
+						delete chatHistory[room.name]; //delete the chat history
+						sizeRooms = _.size(rooms);
+						io.sockets.emit("roomList", {rooms: rooms, count: sizeRooms});
+					} else if (action === "leaveRoom") { //room owner leaves room
+						io.sockets.in(s.room).emit("update", "The owner (" + doctors[s.id].name + ") has left the room. The room is removed and you have been disconnected from it as well.");
+						var socketids = [];
+						for (var i=0; i<sockets.length; i++) {
+							socketids.push(sockets[i].id);
+							if(_.contains((socketids)), room.doctors) {
+								sockets[i].leave(room.name);
+							}
+						}
+
+						if(_.contains((room.doctors)), s.id) {
+							for (var i=0; i<room.people.length; i++) {
+								people[room.people[i]].inroom = null;
+							}
+							for (var i=0; i<room.doctors.length; i++) {
+								doctors[room.doctors[i]].inroom = null;
+							}
+						}
+						delete rooms[doctors[s.id].owns];
+						doctors[s.id].owns = null;
+						room.people = _.without(room.people, s.id); //remove people from the room:people{}collection
+						room.doctors = _.without(room.doctors, s.id);
+						delete chatHistory[room.name]; //delete the chat history
+						sizeRooms = _.size(rooms);
+						io.sockets.emit("roomList", {rooms: rooms, count: sizeRooms});
+					}
+				} else {//user in room but does not own room
+					if (action === "disconnect") {
+						io.sockets.emit("update", doctors[s.id].name + " has disconnected from the server.");
+						if (_.contains((room.doctors), s.id)) {
+							var doctorIndex = room.doctors.indexOf(s.id);
+							room.doctors.splice(doctorIndex, 1);
+							s.leave(room.name);
+						}
+						delete doctors[s.id];
+						sizeDoctors = _.size(doctors);				
+						sizePeople = _.size(people);
+						io.sockets.emit("update-people", {people: people, count: sizePeople });
+						io.sockets.emit("update-doctors", {doctors: doctors, count: sizeDoctors });
+						var o = _.findWhere(sockets, {'id': s.id});
+						sockets = _.without(sockets, o);
+		//  Start here
+
+					} else if (action === "removeRoom") {
+						s.emit("update", "Only the owner can remove a room.");
+					} else if (action === "leaveRoom") {
+						if (_.contains((room.doctors), s.id)) {
+							var doctorIndex = room.doctors.indexOf(s.id);
+							room.doctors.splice(doctorIndex, 1);
+							doctors[s.id].inroom = null;
+							io.sockets.emit("update", doctors[s.id].name + " has left the room.");
+							s.leave(room.name);
+						}
+					}
+				}	
+			} 
+		}
+	else {
+		//The user isn't in a room, but maybe he just disconnected, handle the scenario:
+		if (action === "disconnect") {
+			if (people[s.id].type == "people") {
 				io.sockets.emit("update", people[s.id].name + " has disconnected from the server.");
-				if (_.contains((room.people), s.id)) {
-					var personIndex = room.people.indexOf(s.id);
-					room.people.splice(personIndex, 1);
-					s.leave(room.name);
-				}
 				delete people[s.id];
 				sizePeople = _.size(people);
 				io.sockets.emit("update-people", {people: people, count: sizePeople});
-				var o = _.findWhere(sockets, {'id': s.id});
-				sockets = _.without(sockets, o);
-			} else if (action === "removeRoom") {
-				s.emit("update", "Only the owner can remove a room.");
-			} else if (action === "leaveRoom") {
-				if (_.contains((room.people), s.id)) {
-					var personIndex = room.people.indexOf(s.id);
-					room.people.splice(personIndex, 1);
-					people[s.id].inroom = null;
-					io.sockets.emit("update", people[s.id].name + " has left the room.");
-					s.leave(room.name);
-				}
+			} else if (doctors[s.id].type == "doctors") {
+				io.sockets.emit("update", doctors[s.id].name + " has disconnected from the server.");
+				delete doctors[s.id];				
+				sizeDoctors = _.size(doctors);
+				io.sockets.emit("update-doctors", {doctors: doctors, count: sizeDoctors});	
 			}
-		}	
-	} else {
-		//The user isn't in a room, but maybe he just disconnected, handle the scenario:
-		if (action === "disconnect") {
-			io.sockets.emit("update", people[s.id].name + " has disconnected from the server.");
-			delete people[s.id];
-			sizePeople = _.size(people);
-			io.sockets.emit("update-people", {people: people, count: sizePeople});
 			var o = _.findWhere(sockets, {'id': s.id});
 			sockets = _.without(sockets, o);
 		}		
@@ -299,12 +447,20 @@ io.sockets.on("connection", function (socket) {
 			}
 		} else {
 			if (io.sockets.manager.roomClients[socket.id]['/'+socket.room] !== undefined ) {
-				io.sockets.in(socket.room).emit("chat", people[socket.id], msg);
+
+				var clientType;
+				if(typeof doctors[socket.id] !== "undefined"){
+					clientType = doctors[socket.id];
+		    	}else{
+		    		clientType = people[socket.id];
+		    	}
+
+	    		io.sockets.in(socket.room).emit("chat", clientType, msg);
 				socket.emit("isTyping", false);
 				if (_.size(chatHistory[socket.room]) > 10) {
 					chatHistory[socket.room].splice(0,1);
 				} else {
-					chatHistory[socket.room].push(people[socket.id].name + ": " + msg);
+					chatHistory[socket.room].push(clientType.name + ": " + msg);
 				}
 		    	} else {
 				socket.emit("update", "Please connect to a room.");
@@ -319,7 +475,7 @@ io.sockets.on("connection", function (socket) {
 	});
 
 	//Room functions
-	socket.on("createRoom", function(name) {
+	socket.on("createRoom", function(name) {	
 		if ((typeof people[socket.id] !== "undefined") && (people[socket.id].type == "people")) {
 			if (people[socket.id].inroom) {
 				socket.emit("update", "You are in a room. Please leave it first to create your own.");
@@ -386,7 +542,7 @@ io.sockets.on("connection", function (socket) {
 	});
 
 	socket.on("joinRoom", function(id) {
-		if (typeof people) {
+		if ((typeof people[socket.id] !== "undefined") && (people[socket.id].type == "people")) {
 			if (typeof people[socket.id] !== "undefined") {
 				var room = rooms[id];
 				if (socket.id === room.owner) {
@@ -414,7 +570,7 @@ io.sockets.on("connection", function (socket) {
 					}
 				}
 			}
-		} else if (typeof doctors) {
+		} else if ((typeof doctors[socket.id] !== "undefined") && (doctors[socket.id].type == "doctors")) {
 			if (typeof doctors[socket.id] !== "undefined") {
 				var room = rooms[id];
 				if (socket.id === room.owner) {

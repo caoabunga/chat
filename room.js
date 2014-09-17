@@ -3,6 +3,7 @@ function Room(name, id, owner) {
   this.id = id;
   this.owner = owner;
   this.people = [];
+  this.doctors = [];
   this.peopleLimit = 4;
   this.status = "available";
   this.private = false;
@@ -40,6 +41,28 @@ Room.prototype.getPerson = function(personID) {
     }
   }
   return person;
+};
+
+Room.prototype.removeDoctor = function(doctor) {
+  var doctorIndex = -1;
+  for(var i = 0; i < this.doctors.length; i++){
+    if(this.doctors[i].id === doctor.id){
+      doctorIndex = i;
+      break;
+    }
+  }
+  this.doctors.remove(doctorIndex);
+};
+
+Room.prototype.getDoctor = function(doctorID) {
+  var doctor = null;
+  for(var i = 0; i < this.doctors.length; i++) {
+    if(this.doctors[i].id == doctorID) {
+      doctor = this.doctors[i];
+      break;
+    }
+  }
+  return doctor;
 };
 
 Room.prototype.isAvailable = function() {
